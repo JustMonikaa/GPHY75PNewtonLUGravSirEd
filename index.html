@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhysicsSim - Sandbox Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- MathJax for LaTeX Rendering -->
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body class="bg-gray-900 text-white overflow-hidden flex h-screen select-none">
+
+    <!-- Sidebar (1/6 width) -->
+    <div id="sidebar" class="w-1/6 bg-gray-800 p-4 flex flex-col border-r border-gray-700 relative z-20 shadow-2xl">
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-blue-400">GravitationSim</h1>
+            <p class="text-gray-400 font-mono text-sm mt-1">GPHY74P</p>
+            <p class="text-yellow-500 font-mono text-sm">Sir Ed :)</p>
+        </div>
+        
+        <div class="space-y-4 flex-1">
+            <button onclick="setMode('gravitation')" id="btn-grav" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition shadow-lg">Gravitation</button>
+            <button onclick="setMode('potential')" id="btn-pot" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-semibold transition shadow-lg">Potential Energy</button>
+            <button onclick="setMode('acceleration')" id="btn-acc" class="w-full py-3 bg-green-600 hover:bg-green-500 rounded-lg font-semibold transition shadow-lg">Acceleration</button>
+        </div>
+
+        <div class="text-xs text-gray-500 text-center mt-4">
+            Laboratory Sandbox Mode<br>Physics 2 - SSHS
+        </div>
+    </div>
+
+    <!-- Main Stage (5/6 width) -->
+    <div id="main-stage" class="w-5/6 flex flex-col relative bg-black">
+        
+        <!-- Top Toolbar -->
+        <div id="top-toolbar" class="h-12 bg-gray-800/80 backdrop-blur border-b border-gray-700 flex items-center justify-between px-4 absolute w-full z-10 hidden">
+            <div class="flex items-center space-x-4">
+                <label class="flex items-center space-x-2 text-sm cursor-pointer">
+                    <input type="checkbox" id="true-scale-toggle" class="form-checkbox text-blue-500 rounded" onchange="toggleTrueScale()">
+                    <span>True Scale Rendering</span>
+                </label>
+                <div class="h-4 w-px bg-gray-600"></div>
+                <div class="flex items-center space-x-2 text-sm">
+                    <span>Zoom:</span>
+                    <input type="range" id="zoom-slider" min="0.001" max="50" step="0.001" value="1" class="w-32 cursor-pointer" oninput="updateZoom()">
+                </div>
+            </div>
+            
+            <div class="flex space-x-2">
+                <button onclick="recordData()" class="px-4 py-1 bg-teal-600 hover:bg-teal-500 rounded text-sm font-semibold transition">Record Data</button>
+                <button onclick="resetSim()" class="px-4 py-1 bg-red-600 hover:bg-red-500 rounded text-sm font-semibold transition">Reset</button>
+            </div>
+        </div>
+
+        <!-- Canvas -->
+        <canvas id="sim-canvas" class="flex-1 w-full h-full cursor-crosshair"></canvas>
+
+        <!-- Live Telemetry Dashboard -->
+        <div id="telemetry-panel" class="absolute top-16 left-4 bg-gray-800/90 border border-gray-600 p-4 rounded-lg pointer-events-none hidden max-w-sm shadow-2xl">
+            <h3 class="text-blue-400 font-bold mb-2 border-b border-gray-600 pb-1">Live Telemetry</h3>
+            <div id="telemetry-content" class="text-sm space-y-2 text-gray-200">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <!-- Data Logging Table -->
+        <div id="data-panel" class="absolute top-16 right-4 bg-gray-800/90 border border-gray-600 rounded-lg hidden flex-col shadow-2xl overflow-hidden max-w-md max-h-[60%]">
+            <div class="bg-gray-700 p-2 flex justify-between items-center border-b border-gray-600">
+                <span class="font-bold text-sm text-teal-400">Recorded Data (Lab Output)</span>
+                <button onclick="clearData()" class="text-xs bg-red-500/80 hover:bg-red-500 px-2 py-1 rounded">Clear</button>
+            </div>
+            <div class="overflow-y-auto p-2" id="data-table-container">
+                <table class="w-full text-xs text-left text-gray-300">
+                    <thead class="text-gray-400 border-b border-gray-600">
+                        <tr>
+                            <th class="pb-1 pr-2">r (m)</th>
+                            <th class="pb-1 pr-2">F (N)</th>
+                            <th class="pb-1 pr-2">U (J)</th>
+                            <th class="pb-1">v (m/s)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-table-body">
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Bottom Selection Bar -->
+        <div id="bottom-bar" class="h-28 bg-gray-800/95 border-t border-gray-700 absolute bottom-0 w-full flex items-center px-4 overflow-x-auto gap-6 z-10 hidden custom-scrollbar">
+            <!-- Items injected via JS -->
+        </div>
+
+    </div>
+
+    <!-- Modals & Overlays -->
+    
+    <!-- Instruction Dialog -->
+    <div id="instruction-dialog" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center">
+        <div class="bg-gray-800 border border-gray-600 p-6 rounded-lg max-w-lg shadow-2xl">
+            <h2 id="dialog-title" class="text-2xl font-bold text-blue-400 mb-4"></h2>
+            <div id="dialog-text" class="text-gray-300 mb-6 text-sm leading-relaxed space-y-2"></div>
+            <div class="flex items-center justify-between">
+                <label class="flex items-center space-x-2 text-sm text-gray-400 cursor-pointer">
+                    <input type="checkbox" id="dont-show-checkbox" class="form-checkbox rounded bg-gray-700 border-gray-600 text-blue-500">
+                    <span>Do not show again for this session</span>
+                </label>
+                <button onclick="closeDialog()" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded font-semibold transition">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Velocity Input Dialog -->
+    <div id="velocity-dialog" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center">
+        <div class="bg-gray-800 border border-gray-600 p-6 rounded-lg max-w-md shadow-2xl text-center">
+            <h2 class="text-xl font-bold text-indigo-400 mb-2">Orbital Mechanics Setup</h2>
+            <p class="text-sm text-gray-400 mb-4">Calculate and input the required initial tangential velocity for your intended orbit.</p>
+            <div class="mb-4">
+                <div id="velocity-math-hint" class="text-yellow-400 text-sm mb-4 bg-black/50 p-3 rounded border border-gray-700">
+                    <!-- MathJax equation injected here -->
+                </div>
+                <input type="number" id="velocity-input" class="w-full bg-gray-900 border border-gray-600 rounded px-4 py-2 text-white text-center text-lg focus:outline-none focus:border-indigo-500" placeholder="Enter velocity in m/s">
+            </div>
+            <button onclick="startOrbit()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 rounded font-semibold transition">Launch Object</button>
+        </div>
+    </div>
+
+    <!-- Acceleration Height Input Dialog -->
+    <div id="height-dialog" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center">
+        <div class="bg-gray-800 border border-gray-600 p-6 rounded-lg max-w-md shadow-2xl text-center">
+            <h2 class="text-xl font-bold text-green-400 mb-2">Kinematics Setup</h2>
+            <p class="text-sm text-gray-400 mb-4">Enter the exact drop height, or click 'Drag Manually' to position it with your mouse.</p>
+            <div class="mb-4">
+                <input type="number" id="height-input" class="w-full bg-gray-900 border border-gray-600 rounded px-4 py-2 text-white text-center text-lg focus:outline-none focus:border-green-500" placeholder="Enter height in meters">
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="startDropFromInput()" class="flex-1 py-2 bg-green-600 hover:bg-green-500 rounded font-semibold transition">Drop Now</button>
+                <button onclick="enableManualDragDrop()" class="flex-1 py-2 bg-gray-600 hover:bg-gray-500 rounded font-semibold transition">Drag Manually</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Central Alert Text -->
+    <div id="center-alert" class="absolute top-1/4 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-center pointer-events-none drop-shadow-lg opacity-0 transition-opacity duration-500 z-40"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

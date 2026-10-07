@@ -1,0 +1,48 @@
+/* Custom Scrollbar for bottom bar */
+.custom-scrollbar::-webkit-scrollbar {
+    height: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(31, 41, 55, 0.5); 
+    border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(75, 85, 99, 0.8); 
+    border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 114, 128, 1); 
+}
+
+/* Hide number input spinners */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Animations */
+@keyframes pulse-border {
+    0% { border-color: rgba(59, 130, 246, 0.5); }
+    50% { border-color: rgba(59, 130, 246, 1); }
+    100% { border-color: rgba(59, 130, 246, 0.5); }
+}
+.selected-item {
+    border: 2px solid #3b82f6;
+    animation: pulse-border 1.5s infinite;
+}
+
+.fade-in {
+    opacity: 1 !important;
+}
+
+/* Fix MathJax rendering size in specific containers */
+#telemetry-content .MathJax {
+    font-size: 1.1em !important;
+}
+#data-table-container .MathJax {
+    font-size: 0.9em !important;
+}
